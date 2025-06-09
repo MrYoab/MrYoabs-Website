@@ -1,22 +1,137 @@
-<!doctype.html>
-<html>
-  <head>
-    <title>
-      MrYoab
-    </title>
-    <h1>
-      Hello! I am MrYoab!
-    </h1>
 
-    <h2>
-      This is my Website.
-    </h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MrYoab</title>
+  <style>
+    body {
+      font-family: futura;
+      padding: 2rem;
+      background: #f0f4f8;
+      max-width: 600px;
+      margin: auto;
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+    }
+    .birthday-list, #backButton {
+      display: none;
+    }
+    .person {
+      padding: 1rem;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 1rem;
+      text-align: left;
+    }
+    .next {
+      border: 2px solid #4caf50;
+    }
+    button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      margin-top: 1rem;
+      border: none;
+      border-radius: 5px;
+      background-color: #4caf50;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="mainScreen">
+    <h1>Servus, I am MrYoab!</h1>
+    <p>Welcome to my personal page.</p>
+    <button onclick="authenticate()">Enter Birthday Tracker (private)</button>
+  </div>
 
-  </head>
-  <body>
-    a
-  </body>
+  <div id="birthdaySection">
+    <h1>"Bottom Text"</h1>
+    <div id="birthdayList" class="birthday-list"></div>
+    <button id="backButton" onclick="goBack()">Back</button>
+  </div>
 
+  <script>
+    const people = [
+      { name: "Leoni", birthday: "2007-03-23" },
+      { name: "Nando", birthday: "2007-10-28" },
+      { name: "Goathier", birthday: "2007-10-28" },
+      { name: "Flo", birthday: "2008-07-12" },
+      { name: "Henning", birthday: "2009-02-09" },
+      { name: "Mikko", birthday: "2009-02-19" },
+      { name: "Paul", birthday: "2010-02-15" },
+      { name: "Nico", birthday: "2010-07-08" },
+      { name: "Jakob", birthday: "2010-09-17" },
+      { name: "Julius", birthday: "2013-05-18" },
+    ];
 
+    const today = new Date();
 
+    function getNextBirthday(dateStr) {
+      const bday = new Date(dateStr);
+      const next = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
+      if (next < today) {
+        next.setFullYear(next.getFullYear() + 1);
+      }
+      return next;
+    }
+
+    function calculateAge(dateStr) {
+      const birthDate = new Date(dateStr);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return age;
+    }
+
+    function authenticate() {
+      const password = prompt("Enter the password:");
+      if (password === "gagamel") {
+        document.getElementById("mainScreen").style.display = "none";
+        document.getElementById("birthdaySection").style.display = "block";
+        document.getElementById("birthdayList").style.display = "block";
+        document.getElementById("backButton").style.display = "inline-block";
+        loadBirthdays();
+      } else {
+        alert("Incorrect password!");
+      }
+    }
+
+    function goBack() {
+      document.getElementById("mainScreen").style.display = "block";
+      document.getElementById("birthdaySection").style.display = "none";
+      document.getElementById("birthdayList").innerHTML = "";
+    }
+
+    function loadBirthdays() {
+      const sorted = people
+        .map(person => ({
+          ...person,
+          nextBirthday: getNextBirthday(person.birthday),
+          age: calculateAge(person.birthday),
+        }))
+        .sort((a, b) => a.nextBirthday - b.nextBirthday);
+
+      const list = document.getElementById("birthdayList");
+      sorted.forEach((person, index) => {
+        const div = document.createElement("div");
+        div.className = "person" + (index === 0 ? " next" : "");
+        div.innerHTML = `
+          <strong>${person.name}</strong><br>
+          Age: ${person.age}<br>
+          Birthday: ${new Date(person.birthday).toLocaleDateString()}<br>
+          Next: ${person.nextBirthday.toLocaleDateString()}
+        `;
+        list.appendChild(div);
+      });
+    }
+  </script>
+</body>
 </html>
