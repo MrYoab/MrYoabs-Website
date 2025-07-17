@@ -119,7 +119,7 @@
     <button class="mode" onclick="toggleMode()">🌙/☀️</button>
   </div>
 
-  <h1>The Whistle</h1>
+  <h1>The Whistleeee</h1>
 
   <div class="timer" id="timer">
     <div class="main" id="mainTime">
@@ -198,40 +198,46 @@
       if(state==='paused') return resumeTimer();
       mainRem = minutes*60 + seconds;
       delayRem = delay;
-      state = delay > 0 ? 'delay' : 'running';
-      setBtn('btnStart','Pause','orange');
-      setTimerColor(state==='delay' ? 'var(--green)' : 'var(--fg)');
-      updateMain(state==='delay' ? delayRem : mainRem);
+      if (mainRem === 0) return;
 
-      if(state === 'delay') {
-        secTimer = setInterval(tick, 1000);
+      if(delayRem > 0){
+        state = 'delay';
+        updateMain(delayRem);
+        setTimerColor('var(--green)');
+        secTimer = setInterval(tickDelay, 1000);
       } else {
-        beginMain();
-        secTimer = setInterval(tick, 1000);
-        msTimer = setInterval(updateMS, 50);
+        startMainTimer();
+      }
+
+      setBtn('btnStart','Pause','orange');
+    }
+
+    function tickDelay(){
+      updateMain(delayRem);
+      delayRem--;
+
+      if(delayRem < 0){
+        clearInterval(secTimer);
+        playStartWhistle();
+        startMainTimer();
       }
     }
 
-    function tick(){
-      if(state==='delay'){
-        delayRem--;
-        updateMain(delayRem);
-        if(delayRem <= 0){
-          clearInterval(secTimer);
-          playStartWhistle();  // kurzer Startpfiff
-          beginMain();
-          secTimer = setInterval(tick, 1000);
-          msTimer = setInterval(updateMS, 50);
-          state = 'running';
-          setTimerColor('var(--fg)');
-        }
-      } else if(state==='running'){
-        mainRem--;
-        if(mainRem <= 0){
-          endTimer();
-        } else {
-          updateMain(mainRem);
-        }
+    function startMainTimer(){
+      state = 'running';
+      setTimerColor('var(--fg)');
+      updateMain(mainRem);
+      beginMain();
+      secTimer = setInterval(tickMain, 1000);
+      msTimer = setInterval(updateMS, 50);
+    }
+
+    function tickMain(){
+      mainRem--;
+      if(mainRem <= 0){
+        endTimer();
+      } else {
+        updateMain(mainRem);
       }
     }
 
@@ -251,14 +257,15 @@
       state='running';
       setBtn('btnStart','Pause','orange');
       beginMain();
-      secTimer = setInterval(tick,1000);
+      secTimer = setInterval(tickMain,1000);
       msTimer = setInterval(updateMS,50);
     }
 
     function endTimer(){
       clearInterval(secTimer); clearInterval(msTimer);
-      updateMain(0); document.getElementById('ms').textContent='000';
-      playEndWhistle();  // langer Endpfiff
+      updateMain(0);
+      document.getElementById('ms').textContent='000';
+      playEndWhistle();
       state='stopped';
       setTimerColor('var(--red)');
       setBtn('btnStart','Start','green');
@@ -279,14 +286,14 @@
       a.pause();
       a.currentTime = 0;
       a.play();
-      setTimeout(() => a.pause(), 300); // kurzer Pfiff (0.3s)
+      setTimeout(() => a.pause(), 300);
     }
 
     function playEndWhistle(){
       const a=document.getElementById('whistle');
       a.pause();
       a.currentTime = 0;
-      a.play(); // kompletter Pfiff
+      a.play();
     }
 
     function setTimerColor(c){
