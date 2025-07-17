@@ -21,7 +21,6 @@
       margin: 0;
       padding: 40px;
     }
-
     .top-bar {
       position: fixed;
       top: 10px;
@@ -30,12 +29,6 @@
       align-items: center;
       gap: 10px;
     }
-
-    .top-bar img {
-      height: 32px;
-      width: 32px;
-    }
-
     .mode {
       font-size: 20px;
       background: var(--btn-bg);
@@ -45,28 +38,20 @@
       padding: 5px 10px;
       cursor: pointer;
     }
-
-    h1 {
-      margin-top: 0;
-      font-size: 40px;
-    }
-
     .timer {
       position: relative;
       display: flex;
       justify-content: center;
       align-items: flex-end;
-      margin-top: 30px;
+      margin-top: 50px;
       font-size: 140px;
       font-weight: bold;
       line-height: 1;
     }
-
     .main {
       display: inline-block;
       position: relative;
     }
-
     .ms {
       font-size: 36px;
       position: absolute;
@@ -74,25 +59,21 @@
       right: -55px;
       opacity: 0.7;
     }
-
     .controls, .start-delay {
       margin: 20px;
       display: flex;
       justify-content: center;
       gap: 20px;
     }
-
     .controls div {
       display: flex;
       flex-direction: column;
       align-items: center;
     }
-
     .start-delay span {
       font-size: 36px;
       margin: 0 10px;
     }
-
     button {
       padding: 10px 15px;
       font-size: 20px;
@@ -103,11 +84,9 @@
       cursor: pointer;
       transition: 0.2s;
     }
-
     button:hover {
       background: var(--btn-hover);
     }
-
     .green { background: var(--green); color: #fff; }
     .orange { background: var(--orange); color: #000; }
     .red { background: var(--red); color: #fff; }
@@ -115,7 +94,6 @@
 </head>
 <body class="dark">
   <div class="top-bar">
-    <img src="whistle.png" alt="Logo">
     <button class="mode" onclick="toggleMode()">🌙/☀️</button>
   </div>
 
@@ -154,8 +132,6 @@
     <button id="btnReset" class="red" onclick="resetTimer()">Restart</button>
   </div>
 
-  <audio id="whistle" src="whistle.wav"></audio>
-
   <script>
     let minutes=0, seconds=0, delay=3;
     let state = 'stopped';
@@ -163,21 +139,22 @@
     let msTimer, secTimer, targetTime=0;
 
     function updateMain(t){
-      const m = Math.floor(t/60), s = t%60;
+      const m = Math.floor(t/60), s = t % 60;
       document.getElementById('min').textContent = m.toString().padStart(2,'0');
       document.getElementById('sec').textContent = s.toString().padStart(2,'0');
     }
 
     function updateMS(){
-      const now = Date.now(), rem = Math.max(0,targetTime - now);
-      document.getElementById('ms').textContent = String(rem%1000).padStart(3,'0');
+      const now = Date.now();
+      const rem = Math.max(0, targetTime - now);
+      document.getElementById('ms').textContent = String(rem % 1000).padStart(3,'0');
     }
 
     function adjust(unit, delta){
       if(state !== 'stopped') return;
-      if(unit==='minutes') minutes = Math.max(0, minutes+delta);
-      else seconds = Math.max(0, seconds+delta);
-      mainRem = minutes*60 + seconds;
+      if(unit === 'minutes') minutes = Math.max(0, minutes + delta);
+      else seconds = Math.max(0, seconds + delta);
+      mainRem = minutes * 60 + seconds;
       updateMain(mainRem);
     }
 
@@ -187,22 +164,33 @@
       document.getElementById('startDelay').textContent = delay;
     }
 
-    function setBtn(id,text,cls){
-      const b=document.getElementById(id);
-      b.textContent=text;
-      b.className=cls;
+    function setBtn(id, text, cls){
+      const b = document.getElementById(id);
+      b.textContent = text;
+      b.className = cls;
+    }
+
+    function playWhistle(short = false){
+      const audio = new Audio('whistle.wav');
+      audio.play();
+      if(short){
+        setTimeout(() => {
+          audio.pause();
+          audio.currentTime = 0;
+        }, 400);
+      }
     }
 
     function startOrResume(){
       if(state==='running' || state==='delay') return;
       if(state==='paused') return resumeTimer();
-      mainRem = minutes*60 + seconds;
+      mainRem = minutes * 60 + seconds;
       delayRem = delay;
       state = delay > 0 ? 'delay' : 'running';
       setBtn('btnStart','Pause','orange');
       setTimerColor(state==='delay' ? 'var(--green)' : 'var(--fg)');
       updateMain(state==='delay' ? delayRem : mainRem);
-      if(state==='running') beginMain();
+      if(state === 'running') beginMain();
       secTimer = setInterval(tick, 1000);
       msTimer = setInterval(updateMS, 50);
     }
@@ -210,27 +198,23 @@
     function tick(){
       if(state==='delay'){
         delayRem--;
-        if(delayRem<=0){
-          playWhistle();
-          state='running';
+        if(delayRem <= 0){
+          playWhistle(true); // short start whistle
+          state = 'running';
           setTimerColor('var(--fg)');
           updateMain(mainRem);
-          targetTime = Date.now() + mainRem*1000;
-        } else {
-          updateMain(delayRem);
-        }
+          targetTime = Date.now() + mainRem * 1000;
+        } else updateMain(delayRem);
       } else if(state==='running'){
         mainRem--;
-        if(mainRem<=0){
+        if(mainRem <= 0){
           endTimer();
-        } else {
-          updateMain(mainRem);
-        }
+        } else updateMain(mainRem);
       }
     }
 
     function beginMain(){
-      targetTime = Date.now() + mainRem*1000;
+      targetTime = Date.now() + mainRem * 1000;
     }
 
     function stopTimer(){
@@ -242,7 +226,7 @@
     }
 
     function resumeTimer(){
-      state='running';
+      state = 'running';
       setBtn('btnStart','Pause','orange');
       beginMain();
       secTimer = setInterval(tick,1000);
@@ -251,27 +235,22 @@
 
     function endTimer(){
       clearInterval(secTimer); clearInterval(msTimer);
-      updateMain(0); document.getElementById('ms').textContent='000';
-      playWhistle();
-      state='stopped';
+      updateMain(0);
+      document.getElementById('ms').textContent = '000';
+      playWhistle(); // full end whistle
+      state = 'stopped';
       setTimerColor('var(--red)');
       setBtn('btnStart','Start','green');
     }
 
     function resetTimer(){
       clearInterval(secTimer); clearInterval(msTimer);
-      state='stopped';
+      state = 'stopped';
       setTimerColor('var(--fg)');
-      mainRem = minutes*60 + seconds;
+      mainRem = minutes * 60 + seconds;
       updateMain(mainRem);
-      document.getElementById('ms').textContent='000';
+      document.getElementById('ms').textContent = '000';
       setBtn('btnStart','Start','green');
-    }
-
-    function playWhistle(){
-      const a=document.getElementById('whistle');
-      a.currentTime=0;
-      a.play();
     }
 
     function setTimerColor(c){
