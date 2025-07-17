@@ -25,15 +25,16 @@
     .top-bar {
       position: fixed;
       top: 10px;
-      right: 10px;
+      left: 10px;
       display: flex;
       align-items: center;
       gap: 10px;
     }
 
     .top-bar img {
-      width: 64px;
-      height: 64px;
+      height: 48px;
+      width: auto;
+      user-select: none;
     }
 
     .mode {
@@ -119,7 +120,7 @@
     <button class="mode" onclick="toggleMode()">🌙/☀️</button>
   </div>
 
-  <h1>The Whistle</h1>
+  <h1>Crackpfeife</h1>
 
   <div class="timer" id="timer">
     <div class="main" id="mainTime">
@@ -202,25 +203,19 @@
       setBtn('btnStart', 'Pause', 'orange');
       setTimerColor(state === 'delay' ? 'var(--green)' : 'var(--fg)');
       updateMain(state === 'delay' ? delayRem : mainRem);
-      if (state === 'running') beginMain();
+      if (state === 'running') {
+        beginMain();
+        playWhistle(); // Pfiff nur hier, wenn kein Delay
+      }
       secTimer = setInterval(tick, 1000);
       msTimer = setInterval(updateMS, 50);
-
-      if (state === 'delay' && delayRem === delay) {
-        // Pfiff am Anfang des Delays
-        playWhistle();
-      }
-      if (state === 'running' && delay === 0) {
-        // Pfiff wenn kein Delay
-        playWhistle();
-      }
     }
 
     function tick() {
       if (state === 'delay') {
         delayRem--;
         if (delayRem <= 0) {
-          playWhistle();
+          playWhistle(); // Pfiff nach Delay
           state = 'running';
           setTimerColor('var(--fg)');
           updateMain(mainRem);
@@ -245,8 +240,7 @@
     function stopTimer() {
       if (state === 'running' || state === 'delay') {
         state = 'paused';
-        clearInterval(secTimer);
-        clearInterval(msTimer);
+        clearInterval(secTimer); clearInterval(msTimer);
         setBtn('btnStart', 'Resume', 'green');
       }
     }
@@ -260,8 +254,7 @@
     }
 
     function endTimer() {
-      clearInterval(secTimer);
-      clearInterval(msTimer);
+      clearInterval(secTimer); clearInterval(msTimer);
       updateMain(0);
       document.getElementById('ms').textContent = '000';
       playWhistle();
@@ -271,29 +264,19 @@
     }
 
     function resetTimer() {
-      clearInterval(secTimer);
-      clearInterval(msTimer);
+      clearInterval(secTimer); clearInterval(msTimer);
       state = 'stopped';
       setTimerColor('var(--fg)');
       mainRem = minutes * 60 + seconds;
       updateMain(mainRem);
       document.getElementById('ms').textContent = '000';
       setBtn('btnStart', 'Start', 'green');
-
-      // Pfiff beim Reset wieder ermöglichen (Audio neu laden)
-      const a = document.getElementById('whistle');
-      a.pause();
-      a.currentTime = 0;
     }
 
     function playWhistle() {
       const a = document.getElementById('whistle');
-      a.pause();
       a.currentTime = 0;
       a.play();
-      setTimeout(() => {
-        a.pause();
-      }, 2000); // Nach 2 Sekunden stoppen
     }
 
     function setTimerColor(c) {
