@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Whistle</title>
+  <style>
+    :root {
+      --bg: #121212; --fg: #fff;
+      --btn-bg: #1e1e1e; --btn-hover: #333;
+      --green: #00c853; --orange: #ff9100; --red: #d50000;
+    }
+    body.light {
+      --bg: #f5f5f5; --fg: #000;
+      --btn-bg: #ddd; --btn-hover: #bbb;
+    }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 40px;
+    }
+
+    .top-bar {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .top-bar img {
+      height: 32px;
+      width: 32px;
+    }
+
+    .mode {
+      font-size: 20px;
+      background: var(--btn-bg);
+      color: var(--fg);
+      border: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 40px;
+    }
+
+    .timer {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      margin-top: 30px;
+      font-size: 140px;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .main {
+      display: inline-block;
+      position: relative;
+    }
+
+    .ms {
+      font-size: 36px;
+      position: absolute;
+      top: 0;
+      right: -55px;
+      opacity: 0.7;
+    }
+
+    .controls, .start-delay {
+      margin: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .controls div {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .start-delay span {
+      font-size: 36px;
+      margin: 0 10px;
+    }
+
+    button {
+      padding: 10px 15px;
+      font-size: 20px;
+      background: var(--btn-bg);
+      color: var(--fg);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: var(--btn-hover);
+    }
+
+    .green { background: var(--green); color: #fff; }
+    .orange { background: var(--orange); color: #000; }
+    .red { background: var(--red); color: #fff; }
+  </style>
+</head>
+<body class="dark">
+  <div class="top-bar">
+    <img src="whistle.png" alt="Logo">
+    <button class="mode" onclick="toggleMode()">🌙/☀️</button>
+  </div>
+
+  <h1>The Whistle</h1>
+
+  <div class="timer" id="timer">
+    <div class="main" id="mainTime">
+      <span id="min">00</span>:<span id="sec">00</span>
+      <span class="ms" id="ms">000</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div>
+      <div>Minutes</div>
+      <button onclick="adjust('minutes',1)">+</button>
+      <button onclick="adjust('minutes',-1)">‑</button>
+    </div>
+    <div>
+      <div>Seconds</div>
+      <button onclick="adjust('seconds',1)">+</button>
+      <button onclick="adjust('seconds',-1)">‑</button>
+    </div>
+  </div>
+
+  <div class="start-delay">
+    <div>Start Delay (Seconds)</div>
+    <button onclick="adjustDelay(1)">+</button>
+    <span id="startDelay">3</span>
+    <button onclick="adjustDelay(-1)">‑</button>
+  </div>
+
+  <div class="controls">
+    <button id="btnStart" class="green" onclick="startOrResume()">Start</button>
+    <button id="btnStop" class="orange" onclick="stopTimer()">Stop</button>
+    <button id="btnReset" class="red" onclick="resetTimer()">Restart</button>
+  </div>
+
+  <audio id="whistle" src="whistle.wav"></audio>
+
+  <script>
+    let minutes=0, seconds=0, delay=3;
+    let state = 'stopped';
+    let mainRem=0, delayRem=0;
+    let msTimer, secTimer, targetTime=0;
+
+    function updateMain(t){
+      const m = Math.floor(t/60), s = t%60;
+      document.getElementById('min').textContent = m.toString().padStart(2,'0');
+      document.getElementById('sec').textContent = s.toString().padStart(2,'0');
+    }
+
+    function updateMS(){
+      const now = Date.now(), rem = Math.max(0,targetTime - now);
+      document.getElementById('ms').textContent = String(rem%1000).padStart(3,'0');
+    }
+
+    function adjust(unit, delta){
+      if(state !== 'stopped') return;
+      if(unit==='minutes') minutes = Math.max(0, minutes+delta);
+      else seconds = Math.max(0, seconds+delta);
+      mainRem = minutes*60 + seconds;
+      updateMain(mainRem);
+    }
+
+    function adjustDelay(d){
+      if(state !== 'stopped') return;
+      delay = Math.max(0, delay + d);
+      document.getElementById('startDelay').textContent = delay;
+    }
+
+    function setBtn(id,text,cls){
+      const b=document.getElementById(id);
+      b.textContent=text;
+      b.className=cls;
+    }
+
+    function startOrResume(){
+      if(state==='running' || state==='delay') return;
+      if(state==='paused') return resumeTimer();
+      mainRem = minutes*60 + seconds;
+      delayRem = delay;
+      state = delay > 0 ? 'delay' : 'running';
+      setBtn('btnStart','Pause','orange');
+      setTimerColor(state==='delay' ? 'var(--green)' : 'var(--fg)');
+      updateMain(state==='delay' ? delayRem : mainRem);
+      if(state==='running') beginMain();
+      secTimer = setInterval(tick, 1000);
+      msTimer = setInterval(updateMS, 50);
+    }
+
+    function tick(){
+      if(state==='delay'){
+        delayRem--;
+        if(delayRem<=0){
+          playWhistle();
+          state='running';
+          setTimerColor('var(--fg)');
+          updateMain(mainRem);
+          targetTime = Date.now() + mainRem*1000;
+        } else {
+          updateMain(delayRem);
+        }
+      } else if(state==='running'){
+        mainRem--;
+        if(mainRem<=0){
+          endTimer();
+        } else {
+          updateMain(mainRem);
+        }
+      }
+    }
+
+    function beginMain(){
+      targetTime = Date.now() + mainRem*1000;
+    }
+
+    function stopTimer(){
+      if(state==='running' || state==='delay'){
+        state = 'paused';
+        clearInterval(secTimer); clearInterval(msTimer);
+        setBtn('btnStart','Resume','green');
+      }
+    }
+
+    function resumeTimer(){
+      state='running';
+      setBtn('btnStart','Pause','orange');
+      beginMain();
+      secTimer = setInterval(tick,1000);
+      msTimer = setInterval(updateMS,50);
+    }
+
+    function endTimer(){
+      clearInterval(secTimer); clearInterval(msTimer);
+      updateMain(0); document.getElementById('ms').textContent='000';
+      playWhistle();
+      state='stopped';
+      setTimerColor('var(--red)');
+      setBtn('btnStart','Start','green');
+    }
+
+    function resetTimer(){
+      clearInterval(secTimer); clearInterval(msTimer);
+      state='stopped';
+      setTimerColor('var(--fg)');
+      mainRem = minutes*60 + seconds;
+      updateMain(mainRem);
+      document.getElementById('ms').textContent='000';
+      setBtn('btnStart','Start','green');
+    }
+
+    function playWhistle(){
+      const a=document.getElementById('whistle');
+      a.currentTime=0;
+      a.play();
+    }
+
+    function setTimerColor(c){
+      document.getElementById('timer').style.color = c;
+    }
+
+    function toggleMode(){
+      document.body.classList.toggle('light');
+    }
+
+    resetTimer();
+  </script>
+</body>
+</html>
