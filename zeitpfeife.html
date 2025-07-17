@@ -202,26 +202,32 @@
       setBtn('btnStart','Pause','orange');
       setTimerColor(state==='delay' ? 'var(--green)' : 'var(--fg)');
       updateMain(state==='delay' ? delayRem : mainRem);
-      if(state==='running') beginMain();
-      secTimer = setInterval(tick, 1000);
-      msTimer = setInterval(updateMS, 50);
+
+      if(state === 'delay') {
+        secTimer = setInterval(tick, 1000);
+      } else {
+        beginMain();
+        secTimer = setInterval(tick, 1000);
+        msTimer = setInterval(updateMS, 50);
+      }
     }
 
     function tick(){
       if(state==='delay'){
         delayRem--;
-        if(delayRem<=0){
-          playWhistle();
-          state='running';
+        updateMain(delayRem);
+        if(delayRem <= 0){
+          clearInterval(secTimer);
+          playStartWhistle();  // kurzer Startpfiff
+          beginMain();
+          secTimer = setInterval(tick, 1000);
+          msTimer = setInterval(updateMS, 50);
+          state = 'running';
           setTimerColor('var(--fg)');
-          updateMain(mainRem);
-          targetTime = Date.now() + mainRem*1000;
-        } else {
-          updateMain(delayRem);
         }
       } else if(state==='running'){
         mainRem--;
-        if(mainRem<=0){
+        if(mainRem <= 0){
           endTimer();
         } else {
           updateMain(mainRem);
@@ -252,7 +258,7 @@
     function endTimer(){
       clearInterval(secTimer); clearInterval(msTimer);
       updateMain(0); document.getElementById('ms').textContent='000';
-      playWhistle();
+      playEndWhistle();  // langer Endpfiff
       state='stopped';
       setTimerColor('var(--red)');
       setBtn('btnStart','Start','green');
@@ -268,10 +274,19 @@
       setBtn('btnStart','Start','green');
     }
 
-    function playWhistle(){
+    function playStartWhistle(){
       const a=document.getElementById('whistle');
-      a.currentTime=0;
+      a.pause();
+      a.currentTime = 0;
       a.play();
+      setTimeout(() => a.pause(), 300); // kurzer Pfiff (0.3s)
+    }
+
+    function playEndWhistle(){
+      const a=document.getElementById('whistle');
+      a.pause();
+      a.currentTime = 0;
+      a.play(); // kompletter Pfiff
     }
 
     function setTimerColor(c){
