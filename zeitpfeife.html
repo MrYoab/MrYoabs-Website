@@ -234,9 +234,9 @@
     }
 
     function endTimer(){
-      playWhistle(); // full end whistle
       clearInterval(secTimer); clearInterval(msTimer);
       updateMain(0);
+      playWhistle(); // full end whistle
       document.getElementById('ms').textContent = '000';
       state = 'stopped';
       setTimerColor('var(--red)');
