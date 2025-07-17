@@ -32,8 +32,8 @@
     }
 
     .top-bar img {
-      height: 32px;
-      width: 32px;
+      width: 64px;
+      height: 64px;
     }
 
     .mode {
@@ -115,7 +115,7 @@
 </head>
 <body class="dark">
   <div class="top-bar">
-    <img src="whistle.png" alt="Logo" />
+    <img src="Pallas Logo Neu.png" alt="Logo" />
     <button class="mode" onclick="toggleMode()">🌙/☀️</button>
   </div>
 
@@ -205,6 +205,15 @@
       if (state === 'running') beginMain();
       secTimer = setInterval(tick, 1000);
       msTimer = setInterval(updateMS, 50);
+
+      if (state === 'delay' && delayRem === delay) {
+        // Pfiff am Anfang des Delays
+        playWhistle();
+      }
+      if (state === 'running' && delay === 0) {
+        // Pfiff wenn kein Delay
+        playWhistle();
+      }
     }
 
     function tick() {
@@ -215,7 +224,7 @@
           state = 'running';
           setTimerColor('var(--fg)');
           updateMain(mainRem);
-          beginMain();
+          targetTime = Date.now() + mainRem * 1000;
         } else {
           updateMain(delayRem);
         }
@@ -271,17 +280,20 @@
       document.getElementById('ms').textContent = '000';
       setBtn('btnStart', 'Start', 'green');
 
-      // Reset audio so the whistle can play again on next start
+      // Pfiff beim Reset wieder ermöglichen (Audio neu laden)
       const a = document.getElementById('whistle');
       a.pause();
       a.currentTime = 0;
-      a.load();
     }
 
     function playWhistle() {
       const a = document.getElementById('whistle');
+      a.pause();
       a.currentTime = 0;
       a.play();
+      setTimeout(() => {
+        a.pause();
+      }, 2000); // Nach 2 Sekunden stoppen
     }
 
     function setTimerColor(c) {
