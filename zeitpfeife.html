@@ -32,8 +32,16 @@
     }
 
     .top-bar img {
-      height: 48px; /* größer */
+      height: 70px; /* größer */
       width: auto;
+      display: block;
+    }
+
+    .top-bar button {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
     }
 
     .mode {
@@ -115,11 +123,13 @@
 </head>
 <body class="dark">
   <div class="top-bar">
-    <img src="Pallas Logo Neu.png" alt="Logo" />
+    <button onclick="location.href='index.html'">
+      <img src="Pallas Logo Neu.png" alt="Logo" />
+    </button>
     <button class="mode" onclick="toggleMode()">🌙/☀️</button>
   </div>
 
-  <h1>The Whistle</h1>
+  <h1>Crack Whistle</h1>
 
   <div class="timer" id="timer">
     <div class="main" id="mainTime">
