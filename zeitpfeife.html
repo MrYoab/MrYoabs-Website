@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>The Whistle</title>
+  <title>Crack Whistle</title>
   <style>
     :root {
       --bg: #121212; --fg: #fff;
@@ -32,7 +32,7 @@
     }
 
     .top-bar img {
-      height: 70px; /* größer */
+      height: 70px;
       width: auto;
       display: block;
     }
@@ -124,7 +124,7 @@
 <body class="dark">
   <div class="top-bar">
     <button onclick="location.href='index.html'">
-      <img src="Pallas Logo Neu.png" alt="Logo" />
+      <img src="Pallas Logo Neu.png" alt="Back" />
     </button>
     <button class="mode" onclick="toggleMode()">🌙/☀️</button>
   </div>
@@ -164,7 +164,7 @@
     <button id="btnReset" class="red" onclick="resetTimer()">Restart</button>
   </div>
 
-  <audio id="whistle" src="whistle.wav"></audio>
+  <audio id="whistle" src="whistle.wav" preload="auto"></audio>
 
   <script>
     let minutes = 0, seconds = 0, delay = 2;
@@ -212,7 +212,10 @@
       setBtn('btnStart','Pause','orange');
       setTimerColor(state==='delay' ? 'var(--green)' : 'var(--fg)');
       updateMain(state==='delay' ? delayRem : mainRem);
-      if(state==='running') beginMain();
+      if(state==='running') {
+        playWhistle();
+        beginMain();
+      }
       secTimer = setInterval(tick, 1000);
       msTimer = setInterval(updateMS, 50);
     }
@@ -279,9 +282,16 @@
     }
 
     function playWhistle(){
-      const a=document.getElementById('whistle');
-      a.currentTime=0;
-      a.play();
+      const a = document.getElementById('whistle');
+      if (a.readyState >= 2) { // HAVE_CURRENT_DATA or more
+        a.currentTime = 0;
+        a.play().catch(err => console.warn('Playback failed:', err));
+      } else {
+        a.addEventListener('canplaythrough', () => {
+          a.currentTime = 0;
+          a.play().catch(err => console.warn('Playback failed after ready:', err));
+        }, { once: true });
+      }
     }
 
     function setTimerColor(c){
@@ -291,6 +301,17 @@
     function toggleMode(){
       document.body.classList.toggle('light');
     }
+
+    // 🔓 Unlock audio on first click
+    document.body.addEventListener('click', () => {
+      const a = document.getElementById('whistle');
+      a.play().then(() => {
+        a.pause();
+        a.currentTime = 0;
+      }).catch(() => {
+        // Ignore: autoplay restriction
+      });
+    }, { once: true });
 
     resetTimer();
   </script>
